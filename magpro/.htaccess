@@ -1,0 +1,124 @@
+# MagPro Theme - Apache Configuration for Performance & Security
+# Enable mod_rewrite for WordPress permalinks
+<IfModule mod_rewrite.c>
+	RewriteEngine On
+	RewriteBase /
+	RewriteRule ^index\.php$ - [L]
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteRule . /index.php [L]
+</IfModule>
+
+# ─── GZIP Compression ───
+<IfModule mod_deflate.c>
+	AddOutputFilterByType DEFLATE text/plain
+	AddOutputFilterByType DEFLATE text/html
+	AddOutputFilterByType DEFLATE text/xml
+	AddOutputFilterByType DEFLATE text/css
+	AddOutputFilterByType DEFLATE text/javascript
+	AddOutputFilterByType DEFLATE application/xml
+	AddOutputFilterByType DEFLATE application/xhtml+xml
+	AddOutputFilterByType DEFLATE application/rss+xml
+	AddOutputFilterByType DEFLATE application/javascript
+	AddOutputFilterByType DEFLATE application/x-javascript
+	AddOutputFilterByType DEFLATE application/x-font-ttf
+	AddOutputFilterByType DEFLATE application/x-font-otf
+	AddOutputFilterByType DEFLATE application/font-woff
+	AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# ─── Browser Caching ───
+<IfModule mod_expires.c>
+	ExpiresActive On
+
+	# HTML
+	ExpiresByType text/html "access plus 1 week"
+
+	# CSS & JavaScript
+	ExpiresByType text/css "access plus 1 year"
+	ExpiresByType application/javascript "access plus 1 year"
+	ExpiresByType text/javascript "access plus 1 year"
+
+	# Images
+	ExpiresByType image/jpeg "access plus 1 year"
+	ExpiresByType image/gif "access plus 1 year"
+	ExpiresByType image/png "access plus 1 year"
+	ExpiresByType image/webp "access plus 1 year"
+	ExpiresByType image/svg+xml "access plus 1 year"
+	ExpiresByType image/x-icon "access plus 1 year"
+
+	# Fonts
+	ExpiresByType font/ttf "access plus 1 year"
+	ExpiresByType font/otf "access plus 1 year"
+	ExpiresByType font/woff "access plus 1 year"
+	ExpiresByType font/woff2 "access plus 1 year"
+	ExpiresByType application/font-woff "access plus 1 year"
+
+	# Default
+	ExpiresDefault "access plus 2 days"
+</IfModule>
+
+# ─── Cache Control Headers ───
+<IfModule mod_headers.c>
+	# Images
+	<FilesMatch "\.(jpg|jpeg|png|gif|webp|svg|ico)$">
+		Header set Cache-Control "max-age=31536000, public"
+	</FilesMatch>
+
+	# CSS & JS
+	<FilesMatch "\.(css|js)$">
+		Header set Cache-Control "max-age=31536000, public"
+	</FilesMatch>
+
+	# Fonts
+	<FilesMatch "\.(ttf|otf|woff|woff2|eot)$">
+		Header set Cache-Control "max-age=31536000, public"
+		Header set Access-Control-Allow-Origin "*"
+	</FilesMatch>
+
+	# HTML
+	<FilesMatch "\.(html)$">
+		Header set Cache-Control "max-age=604800, public"
+	</FilesMatch>
+
+	# Security Headers
+	Header set X-Frame-Options "SAMEORIGIN"
+	Header set X-Content-Type-Options "nosniff"
+	Header set X-XSS-Protection "1; mode=block"
+	Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# ─── ETag Optimization ───
+<IfModule mod_headers.c>
+	Header unset ETag
+	FileETag None
+</IfModule>
+
+# ─── Security ───
+# Disable directory listing
+Options -Indexes
+
+# Block access to sensitive files
+<FilesMatch "^\.">
+	Order allow,deny
+	Deny from all
+</FilesMatch>
+
+<FilesMatch "(wp-config\.php|wp-settings\.php)$">
+	Order allow,deny
+	Deny from all
+</FilesMatch>
+
+# Block access to uploads but allow images
+<FilesMatch "\.(php|phtml|php3|php4|php5|php6|php7|phps|pht|phar)$">
+	Order Deny,Allow
+	Deny from all
+</FilesMatch>
+
+# ─── Protect wp-admin ───
+<IfModule mod_rewrite.c>
+	RewriteCond %{REQUEST_URI} ^wp-admin [NC]
+	RewriteCond %{REQUEST_METHOD} ^POST [NC]
+	RewriteCond %{HTTP_REFERER} !^http://(.+\.)?example\.com/ [NC]
+	RewriteRule ^(.*)$ - [F]
+</IfModule>

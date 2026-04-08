@@ -1,0 +1,53 @@
+# MagPro Theme - robots.txt for SEO optimization
+# This file tells search engines which pages to crawl and which to skip
+
+User-agent: *
+Allow: /
+Allow: /wp-content/uploads/
+
+# Disallow admin and private areas
+Disallow: /wp-admin/
+Disallow: /wp-login.php
+Disallow: /wp-includes/
+Disallow: /wp-content/plugins/
+Disallow: /wp-content/themes/
+Disallow: /*.php$
+Disallow: /trackback/
+Disallow: /feed/
+Disallow: /comments/
+Disallow: /?s=
+Disallow: /?p=
+Disallow: /search/
+Disallow: /?orderby=
+Disallow: /?paged=
+
+# Disallow commonly spammed paths
+Disallow: /xmlrpc.php
+
+# Allow crawling of important assets
+Allow: /wp-content/uploads/
+Allow: /wp-content/themes/magpro/
+
+# Sitemap
+Sitemap: {{ site_url }}/sitemap.xml
+Sitemap: {{ site_url }}/news-sitemap.xml
+
+# Google specific rules
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Bing specific rules
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# Slow bots - reduce load
+User-agent: AhrefsBot
+Crawl-delay: 10
+
+User-agent: SemrushBot
+Crawl-delay: 10
+
+User-agent: MJ12bot
+Crawl-delay: 10

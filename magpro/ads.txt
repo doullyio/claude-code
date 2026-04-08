@@ -1,0 +1,9 @@
+# ads.txt file for Google AdSense
+# Place your AdSense publisher ID in the appropriate format below
+# Format: google.com, pub-xxxxxxxxxxxxxxxx, DIRECT, f08c47fec0942fa0
+
+# Example (replace with your actual publisher ID):
+# google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0
+
+# This file helps Google verify that you are the legitimate publisher
+# Read more: https://support.google.com/adsense/answer/7532444

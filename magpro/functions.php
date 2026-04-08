@@ -109,6 +109,7 @@ require MAGPRO_DIR . '/inc/performance.php';
 require MAGPRO_DIR . '/inc/seo.php';
 require MAGPRO_DIR . '/inc/schema.php';
 require MAGPRO_DIR . '/inc/adsense.php';
+require MAGPRO_DIR . '/inc/adsense-advanced.php';
 require MAGPRO_DIR . '/inc/amp.php';
 require MAGPRO_DIR . '/inc/customizer.php';
 require MAGPRO_DIR . '/inc/widgets.php';
