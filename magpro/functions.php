@@ -105,6 +105,7 @@ add_action( 'wp_enqueue_scripts', 'magpro_scripts' );
  * Include theme modules.
  */
 require MAGPRO_DIR . '/inc/helpers.php';
+require MAGPRO_DIR . '/inc/core-web-vitals.php';
 require MAGPRO_DIR . '/inc/performance.php';
 require MAGPRO_DIR . '/inc/seo.php';
 require MAGPRO_DIR . '/inc/schema.php';
