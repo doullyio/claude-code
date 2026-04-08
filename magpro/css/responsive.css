@@ -29,6 +29,15 @@
 		--magpro-gap: 1rem;
 	}
 
+	.magpro-contact-wrapper {
+		grid-template-columns: 1fr;
+	}
+
+	.magpro-contact-info {
+		position: static;
+		top: auto;
+	}
+
 	/* Navigation */
 	.magpro-menu-toggle {
 		display: block;
@@ -190,6 +199,15 @@
 	.magpro-container {
 		padding-left: 0.75rem;
 		padding-right: 0.75rem;
+	}
+
+	.magpro-contact-wrapper {
+		grid-template-columns: 1fr;
+	}
+
+	.magpro-contact-info {
+		position: static;
+		top: auto;
 	}
 
 	.magpro-cols-2,

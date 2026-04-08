@@ -269,6 +269,55 @@ function magpro_customize_register( $wp_customize ) {
 		),
 	) );
 
+	// ─── Contact Section ───
+
+	$wp_customize->add_section( 'magpro_contact', array(
+		'title' => __( 'Contact Information', 'magpro' ),
+		'panel' => 'magpro_panel',
+	) );
+
+	$wp_customize->add_setting( 'magpro_contact_email', array(
+		'default'           => '',
+		'sanitize_callback' => 'sanitize_email',
+	) );
+	$wp_customize->add_control( 'magpro_contact_email', array(
+		'label'   => __( 'Contact Email', 'magpro' ),
+		'section' => 'magpro_contact',
+		'type'    => 'email',
+	) );
+
+	$wp_customize->add_setting( 'magpro_contact_phone', array(
+		'default'           => '',
+		'sanitize_callback' => 'sanitize_text_field',
+	) );
+	$wp_customize->add_control( 'magpro_contact_phone', array(
+		'label'   => __( 'Contact Phone', 'magpro' ),
+		'section' => 'magpro_contact',
+		'type'    => 'text',
+	) );
+
+	$wp_customize->add_setting( 'magpro_contact_address', array(
+		'default'           => '',
+		'sanitize_callback' => 'wp_kses_post',
+	) );
+	$wp_customize->add_control( 'magpro_contact_address', array(
+		'label'       => __( 'Contact Address', 'magpro' ),
+		'description' => __( 'You can use line breaks.', 'magpro' ),
+		'section'     => 'magpro_contact',
+		'type'        => 'textarea',
+	) );
+
+	$wp_customize->add_setting( 'magpro_contact_form_shortcode', array(
+		'default'           => '',
+		'sanitize_callback' => 'sanitize_text_field',
+	) );
+	$wp_customize->add_control( 'magpro_contact_form_shortcode', array(
+		'label'       => __( 'Contact Form 7 Shortcode', 'magpro' ),
+		'description' => __( 'e.g. [contact-form-7 id="abc123"]', 'magpro' ),
+		'section'     => 'magpro_contact',
+		'type'        => 'textarea',
+	) );
+
 	// ─── Social Media Section ───
 
 	$wp_customize->add_section( 'magpro_social', array(

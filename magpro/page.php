@@ -36,11 +36,6 @@ $sidebar = get_theme_mod( 'magpro_sidebar_position', 'right' );
 					?>
 				</div>
 
-				<?php
-				if ( comments_open() || get_comments_number() ) :
-					comments_template();
-				endif;
-				?>
 			</article>
 			<?php endwhile; ?>
 

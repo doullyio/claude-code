@@ -669,3 +669,157 @@
 	font-size: 0.9375rem;
 	margin-top: 0.375rem;
 }
+
+/* Contact Page */
+.magpro-contact-page {
+	max-width: 900px;
+}
+
+.magpro-contact-content {
+	margin-bottom: 2.5rem;
+}
+
+.magpro-contact-wrapper {
+	display: grid;
+	grid-template-columns: 2fr 1fr;
+	gap: 2rem;
+}
+
+.magpro-contact-form-wrapper h2,
+.magpro-contact-info h2 {
+	font-size: 1.25rem;
+	margin-bottom: 1.5rem;
+	padding-bottom: 0.75rem;
+	border-bottom: 2px solid var(--magpro-accent);
+}
+
+.magpro-contact-form,
+.magpro-contact-form-wrapper > form {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.magpro-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.magpro-form-group label {
+	font-weight: 600;
+	font-size: 0.9375rem;
+}
+
+.magpro-form-group input,
+.magpro-form-group textarea {
+	padding: 0.75rem 1rem;
+	border: 1px solid var(--magpro-border);
+	border-radius: var(--magpro-radius);
+	font-family: inherit;
+	font-size: 0.9375rem;
+	background: var(--magpro-bg);
+	color: var(--magpro-text);
+	transition: border-color var(--magpro-transition);
+}
+
+.magpro-form-group input:focus,
+.magpro-form-group textarea:focus {
+	outline: none;
+	border-color: var(--magpro-accent);
+}
+
+.magpro-btn {
+	padding: 0.875rem 2rem;
+	border-radius: var(--magpro-radius);
+	border: none;
+	font-size: 0.9375rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all var(--magpro-transition);
+	text-decoration: none;
+	display: inline-block;
+	text-align: center;
+}
+
+.magpro-btn-primary {
+	background: var(--magpro-accent);
+	color: #fff;
+}
+
+.magpro-btn-primary:hover {
+	background: var(--magpro-secondary);
+	color: #fff;
+}
+
+.magpro-contact-notice {
+	padding: 1rem;
+	background: #fef3cd;
+	border: 1px solid #ffc107;
+	border-radius: var(--magpro-radius);
+	color: #856404;
+}
+
+.magpro-contact-info {
+	background: var(--magpro-bg-alt);
+	padding: 1.5rem;
+	border-radius: var(--magpro-radius);
+	height: fit-content;
+	position: sticky;
+	top: 5rem;
+}
+
+.magpro-contact-item {
+	margin-bottom: 1.5rem;
+}
+
+.magpro-contact-item:last-child {
+	margin-bottom: 0;
+}
+
+.magpro-contact-item h3 {
+	font-size: 0.875rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--magpro-text-muted);
+	margin-bottom: 0.5rem;
+}
+
+.magpro-contact-item a {
+	color: var(--magpro-accent);
+	font-weight: 500;
+	display: block;
+	word-break: break-all;
+}
+
+.magpro-contact-item a:hover {
+	color: var(--magpro-secondary);
+}
+
+.magpro-contact-item p {
+	color: var(--magpro-text-light);
+	line-height: 1.6;
+}
+
+.magpro-contact-social {
+	padding-top: 1.5rem;
+	border-top: 1px solid var(--magpro-border);
+}
+
+.magpro-contact-social a {
+	display: inline-block;
+	margin-right: 0.75rem;
+	margin-bottom: 0.5rem;
+	padding: 0.5rem 0.75rem;
+	background: var(--magpro-accent);
+	color: #fff;
+	border-radius: 3px;
+	font-size: 0.8125rem;
+	font-weight: 500;
+}
+
+.magpro-contact-social a:hover {
+	opacity: 0.85;
+	color: #fff;
+}

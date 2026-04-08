@@ -195,3 +195,54 @@ function magpro_image_size_names( $sizes ) {
 	) );
 }
 add_filter( 'image_size_names_choose', 'magpro_image_size_names' );
+
+/**
+ * Disable comments on the entire site.
+ */
+function magpro_disable_comments() {
+	// Remove comments support from all post types.
+	remove_post_type_support( 'post', 'comments' );
+	remove_post_type_support( 'page', 'comments' );
+
+	// Remove comments menu from admin.
+	remove_menu_page( 'edit-comments.php' );
+}
+add_action( 'init', 'magpro_disable_comments' );
+
+/**
+ * Hide comments on frontend.
+ */
+function magpro_hide_comments_on_frontend() {
+	if ( ! is_admin() ) {
+		wp_dequeue_script( 'comment-reply' );
+	}
+}
+add_action( 'wp_enqueue_scripts', 'magpro_hide_comments_on_frontend' );
+
+/**
+ * Hide recent comments widget.
+ */
+function magpro_unregister_widgets() {
+	unregister_widget( 'WP_Widget_Recent_Comments' );
+}
+add_action( 'widgets_init', 'magpro_unregister_widgets' );
+
+/**
+ * Use contact.php template for contact page.
+ *
+ * @param string $template Template path.
+ * @return string
+ */
+function magpro_contact_template( $template ) {
+	if ( is_page() ) {
+		$page = get_queried_object();
+		if ( $page && has_term( 'contact', 'page_type' ) || 'contact' === $page->post_name || 'اتصل بنا' === $page->post_title || 'Contact Us' === $page->post_title ) {
+			$contact_template = MAGPRO_DIR . '/contact.php';
+			if ( file_exists( $contact_template ) ) {
+				return $contact_template;
+			}
+		}
+	}
+	return $template;
+}
+add_filter( 'template_include', 'magpro_contact_template' );
