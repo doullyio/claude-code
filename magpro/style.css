@@ -1,0 +1,28 @@
+/*!
+ * Theme Name: MagPro
+ * Theme URI: https://magpro-theme.com
+ * Author: MagPro Team
+ * Author URI: https://magpro-theme.com
+ * Description: Ultra-fast, SEO-optimized magazine theme for news, blogs, and publications
+ * Version: 1.0.0
+ * License: GPL v2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: magpro
+ * Domain Path: /languages
+ * Requires at least: 5.9
+ * Requires PHP: 7.4
+ * Tested up to: 6.5
+ */
+
+/*
+ * MagPro - Ultra-Fast Magazine Theme
+ * Performance: 90+ PageSpeed Score
+ * SEO: Full JSON-LD Schema Support
+ * AdSense: Optimized Ad Placement
+ *
+ * All CSS is imported via @import statements.
+ * Critical CSS is inlined in header.php
+ * The main stylesheet is loaded asynchronously.
+ */
+
+/* Base styles imported via PHP to manage critical vs deferred CSS */

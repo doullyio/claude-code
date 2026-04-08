@@ -1,0 +1,413 @@
+/**
+ * MagPro Base CSS - Critical CSS (inlined in head)
+ *
+ * This file is inlined in the <head> for fastest initial paint.
+ * Keep it minimal - only above-the-fold critical styles.
+ */
+
+/* CSS Custom Properties */
+:root {
+	--magpro-accent: #e63946;
+	--magpro-secondary: #1d3557;
+	--magpro-text: #1a1a2e;
+	--magpro-text-light: #555;
+	--magpro-text-muted: #888;
+	--magpro-bg: #fff;
+	--magpro-bg-alt: #f8f9fa;
+	--magpro-border: #e5e7eb;
+	--magpro-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+	--magpro-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+	--magpro-radius: 6px;
+	--magpro-radius-lg: 10px;
+	--magpro-container: 1200px;
+	--magpro-gap: 1.5rem;
+	--magpro-font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	--magpro-font-heading: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	--magpro-transition: 0.2s ease;
+}
+
+/* Dark mode */
+[data-theme="dark"] {
+	--magpro-text: #e4e4e7;
+	--magpro-text-light: #a1a1aa;
+	--magpro-text-muted: #71717a;
+	--magpro-bg: #18181b;
+	--magpro-bg-alt: #27272a;
+	--magpro-border: #3f3f46;
+	--magpro-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+	--magpro-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Reset / Box Model */
+*, *::before, *::after {
+	box-sizing: border-box;
+}
+
+* {
+	margin: 0;
+	padding: 0;
+}
+
+html {
+	scroll-behavior: smooth;
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	font-family: var(--magpro-font-body);
+	font-size: 1rem;
+	line-height: 1.7;
+	color: var(--magpro-text);
+	background-color: var(--magpro-bg);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	overflow-x: hidden;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+	font-family: var(--magpro-font-heading);
+	font-weight: 700;
+	line-height: 1.3;
+	color: var(--magpro-text);
+}
+
+h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); }
+h2 { font-size: clamp(1.375rem, 3vw, 1.875rem); }
+h3 { font-size: clamp(1.125rem, 2.5vw, 1.5rem); }
+h4 { font-size: 1.125rem; }
+h5 { font-size: 1rem; }
+h6 { font-size: 0.875rem; }
+
+a {
+	color: var(--magpro-accent);
+	text-decoration: none;
+	transition: color var(--magpro-transition);
+}
+
+a:hover,
+a:focus {
+	color: var(--magpro-secondary);
+}
+
+img {
+	max-width: 100%;
+	height: auto;
+	display: block;
+}
+
+/* Container */
+.magpro-container {
+	width: 100%;
+	max-width: var(--magpro-container);
+	margin-left: auto;
+	margin-right: auto;
+	padding-left: 1rem;
+	padding-right: 1rem;
+}
+
+/* Screen Reader Text */
+.screen-reader-text {
+	clip: rect(1px, 1px, 1px, 1px);
+	clip-path: inset(50%);
+	height: 1px;
+	width: 1px;
+	margin: -1px;
+	overflow: hidden;
+	padding: 0;
+	position: absolute;
+	white-space: nowrap;
+}
+
+.screen-reader-text:focus {
+	clip: auto;
+	clip-path: none;
+	height: auto;
+	width: auto;
+	display: block;
+	background: var(--magpro-bg);
+	color: var(--magpro-text);
+	padding: 1rem;
+	z-index: 100000;
+}
+
+/* Skip Link */
+.skip-link {
+	position: absolute;
+	top: -100%;
+	left: 0;
+	z-index: 999999;
+	padding: 0.75rem 1.5rem;
+	background: var(--magpro-accent);
+	color: #fff;
+	font-weight: 600;
+}
+
+.skip-link:focus {
+	top: 0;
+	clip: auto;
+	clip-path: none;
+	height: auto;
+	width: auto;
+}
+
+/* Header */
+.magpro-header {
+	background: var(--magpro-bg);
+	border-bottom: 1px solid var(--magpro-border);
+}
+
+.has-sticky-header .magpro-main-nav {
+	position: sticky;
+	top: 0;
+	z-index: 1000;
+}
+
+.magpro-topbar {
+	background: var(--magpro-secondary);
+	color: #fff;
+	font-size: 0.8125rem;
+	padding: 0.375rem 0;
+}
+
+.magpro-topbar .magpro-container {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.magpro-topbar-menu {
+	list-style: none;
+	display: flex;
+	gap: 1rem;
+}
+
+.magpro-topbar-menu a {
+	color: rgba(255, 255, 255, 0.85);
+	font-size: 0.8125rem;
+}
+
+.magpro-topbar-menu a:hover {
+	color: #fff;
+}
+
+.magpro-topbar-right {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+
+.magpro-topbar-date {
+	color: rgba(255, 255, 255, 0.7);
+}
+
+.magpro-dark-toggle {
+	background: none;
+	border: none;
+	color: #fff;
+	cursor: pointer;
+	font-size: 1.125rem;
+	padding: 0.25rem;
+	line-height: 1;
+}
+
+.magpro-header-main {
+	padding: 1.25rem 0;
+}
+
+.magpro-header-inner {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.magpro-branding a {
+	color: var(--magpro-text);
+	text-decoration: none;
+}
+
+.magpro-site-title a {
+	font-size: clamp(1.5rem, 4vw, 2.25rem);
+	font-weight: 800;
+	font-family: var(--magpro-font-heading);
+}
+
+.magpro-site-description {
+	font-size: 0.875rem;
+	color: var(--magpro-text-muted);
+	margin-top: 0.125rem;
+}
+
+.magpro-logo img {
+	max-height: 60px;
+	width: auto;
+}
+
+/* Navigation */
+.magpro-main-nav {
+	background: var(--magpro-secondary);
+}
+
+.magpro-nav-inner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.magpro-primary-menu {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.magpro-primary-menu > li > a {
+	display: block;
+	padding: 0.875rem 1rem;
+	color: #fff;
+	font-size: 0.9375rem;
+	font-weight: 500;
+	transition: background var(--magpro-transition);
+}
+
+.magpro-primary-menu > li > a:hover,
+.magpro-primary-menu > li.current-menu-item > a {
+	background: var(--magpro-accent);
+	color: #fff;
+}
+
+/* Dropdown */
+.magpro-primary-menu li {
+	position: relative;
+}
+
+.magpro-primary-menu .sub-menu {
+	display: none;
+	position: absolute;
+	top: 100%;
+	left: 0;
+	min-width: 220px;
+	background: var(--magpro-bg);
+	border: 1px solid var(--magpro-border);
+	box-shadow: var(--magpro-shadow-md);
+	list-style: none;
+	z-index: 1000;
+}
+
+.magpro-primary-menu li:hover > .sub-menu,
+.magpro-primary-menu li:focus-within > .sub-menu {
+	display: block;
+}
+
+.magpro-primary-menu .sub-menu a {
+	display: block;
+	padding: 0.625rem 1rem;
+	color: var(--magpro-text);
+	font-size: 0.875rem;
+	border-bottom: 1px solid var(--magpro-border);
+}
+
+.magpro-primary-menu .sub-menu a:hover {
+	background: var(--magpro-bg-alt);
+	color: var(--magpro-accent);
+}
+
+.magpro-primary-menu .sub-menu .sub-menu {
+	top: 0;
+	left: 100%;
+}
+
+/* Menu Toggle */
+.magpro-menu-toggle {
+	display: none;
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 0.5rem;
+}
+
+.magpro-hamburger {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.magpro-hamburger span {
+	display: block;
+	width: 24px;
+	height: 2px;
+	background: #fff;
+	transition: transform var(--magpro-transition);
+}
+
+/* Search Toggle */
+.magpro-nav-search {
+	position: relative;
+}
+
+.magpro-search-toggle {
+	background: none;
+	border: none;
+	color: #fff;
+	cursor: pointer;
+	padding: 0.75rem;
+	display: flex;
+	align-items: center;
+}
+
+.magpro-search-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.85);
+	z-index: 10000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.magpro-search-overlay[hidden] {
+	display: none;
+}
+
+.magpro-search-overlay-inner {
+	width: 90%;
+	max-width: 600px;
+	position: relative;
+}
+
+.magpro-search-overlay .search-form {
+	display: flex;
+}
+
+.magpro-search-overlay .search-field {
+	flex: 1;
+	padding: 1rem 1.25rem;
+	font-size: 1.25rem;
+	border: 2px solid var(--magpro-accent);
+	border-right: none;
+	border-radius: var(--magpro-radius) 0 0 var(--magpro-radius);
+	background: var(--magpro-bg);
+	color: var(--magpro-text);
+	outline: none;
+}
+
+.magpro-search-overlay .search-submit {
+	padding: 1rem 1.5rem;
+	background: var(--magpro-accent);
+	color: #fff;
+	border: 2px solid var(--magpro-accent);
+	border-radius: 0 var(--magpro-radius) var(--magpro-radius) 0;
+	cursor: pointer;
+	font-size: 1rem;
+	font-weight: 600;
+}
+
+.magpro-search-close {
+	position: absolute;
+	top: -3rem;
+	right: 0;
+	background: none;
+	border: none;
+	color: #fff;
+	font-size: 2rem;
+	cursor: pointer;
+}
