@@ -1,0 +1,118 @@
+{
+  "name": "Claude AI Processor - Med Africa (OpenRouter)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "claude-ai-processor",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "ai-webhook",
+      "name": "AI Processor Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "webhookId": "claude-ai-processor"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build messages array for Claude via OpenRouter\nconst input = $input.first().json;\nconst history = input.conversationHistory || [];\nconst sessionData = input.sessionData || {};\nconst currentState = input.currentState || 'classifying';\n\n// System prompt for Med Africa\nconst systemPrompt = `أنت وكيل دعم عملاء لشركة Med Africa، شركة مغربية متخصصة في توصيل منتجات Temu للمغرب.\n\nقواعد الأسلوب:\n- تكلم دائما بالدارجة المغربية بأسلوب محترم ودافئ\n- استعمل كلمات مثل: \"واش\"، \"بغيت\"، \"غادي\"، \"ديال\"، \"مزيان\"، \"عافاك\"\n- ابدأ دائما بـ \"أهلاً\" أو \"لاباس\" أو \"مرحبا\"\n- كن موجزاً — جملتان أو ثلاثة في كل رد\n- إذا كتب العميل بالعربية الفصحى أو الفرنسية، رد بنفس اللغة مع الدارجة\n\nمراحل جمع البيانات (اتبع الترتيب):\n1. اسأل عن الاسم الكامل\n2. اسأل عن اللقب (نسب)\n3. اسأل عن المدينة\n4. اسأل عن رقم التتبع (numéro de suivi)\n5. اسأل: \"شنو المشكل أو الاستفسار ديالك؟\"\n\nتصنيف الطلب — حدد نوعاً واحداً فقط:\nشكاوي:\n  - \"تأخير\": الطرد تأخر عن الموعد المحدد\n  - \"ضياع\": الطرد ما وصلش خالص\n  - \"تلف\": الطرد وصل مكسور أو ناقص\n  - \"منتج_خطأ\": وصل منتج مختلف على اللي طلبه\n\nاستفسارات:\n  - \"تتبع\": يبغي يعرف فين الطرد دابا\n  - \"إرجاع\": يبغي يرجع المنتج\n  - \"توصيل\": يبغي يعرف عن مواعيد التوصيل\n  - \"عام\": أي سؤال آخر\n\nتحديد الأولوية:\n  - \"عاجل\": ضياع + مضى أكثر من 30 يوم، أو تلف كلي\n  - \"مهم\": تأخير + مضى أكثر من 15 يوم، أو منتج خطأ\n  - \"عادي\": باقي الحالات\n\nبيانات العميل المتوفرة حالياً:\n- الاسم: ${sessionData.firstName || 'غير متوفر'}\n- اللقب: ${sessionData.lastName || 'غير متوفر'}\n- المدينة: ${sessionData.city || 'غير متوفر'}\n- رقم التتبع: ${sessionData.trackingNumber || 'غير متوفر'}\n\nالحالة الحالية: ${currentState}\n\nفي آخر كل محادثة مكتملة، أرجع JSON بهذا الشكل:\n{\n  \"reply\": \"نص الرد للعميل\",\n  \"type\": \"شكوى|استفسار\",\n  \"category\": \"تأخير|ضياع|تلف|منتج_خطأ|تتبع|إرجاع|توصيل|عام\",\n  \"priority\": \"عاجل|مهم|عادي\",\n  \"summary\": \"ملخص قصير بالعربية\",\n  \"data_complete\": true|false\n}\n\nيجب أن ترجع دائما الجواب بصيغة JSON فقط، بلا أي نص إضافي.`;\n\n// Build messages array from conversation history\nconst messages = history.map(msg => ({\n  role: msg.role === 'user' ? 'user' : 'assistant',\n  content: msg.content\n}));\n\n// If the latest message isn't from the user, add it\nif (input.messageBody && (messages.length === 0 || messages[messages.length - 1].content !== input.messageBody)) {\n  messages.push({\n    role: 'user',\n    content: input.messageBody\n  });\n}\n\nreturn [{\n  json: {\n    systemPrompt,\n    messages,\n    phoneNumber: input.phoneNumber,\n    sessionData,\n    currentState\n  }\n}];"
+      },
+      "id": "build-prompt",
+      "name": "Build AI Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.OPENROUTER_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "HTTP-Referer",
+              "value": "https://medafrica.ma"
+            },
+            {
+              "name": "X-Title",
+              "value": "Med Africa WhatsApp Support"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"anthropic/claude-3.5-sonnet\",\n  \"max_tokens\": 400,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": {{ JSON.stringify($json.systemPrompt) }}\n    },\n    ...{{ JSON.stringify($json.messages) }}\n  ],\n  \"temperature\": 0.3,\n  \"response_format\": {\n    \"type\": \"json_object\"\n  }\n}",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "openrouter-request",
+      "name": "Call OpenRouter (Claude)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Claude response from OpenRouter\nconst input = $input.first().json;\nconst phoneNumber = $('Build AI Prompt').first().json.phoneNumber;\nconst sessionData = $('Build AI Prompt').first().json.sessionData;\n\nlet aiResponse;\n\ntry {\n  // OpenRouter returns response in choices[0].message.content\n  const body = input.body || input;\n  const content = body.choices?.[0]?.message?.content || '';\n  \n  // Try to parse as JSON\n  try {\n    aiResponse = JSON.parse(content);\n  } catch (e) {\n    // Try to extract JSON from the response\n    const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n    if (jsonMatch) {\n      aiResponse = JSON.parse(jsonMatch[0]);\n    } else {\n      // Fallback: treat entire content as reply\n      aiResponse = {\n        reply: content,\n        type: 'استفسار',\n        category: 'عام',\n        priority: 'عادي',\n        summary: '',\n        data_complete: false\n      };\n    }\n  }\n} catch (error) {\n  aiResponse = {\n    reply: 'عذراً، وقع مشكل تقني. عافاك عاود حاول من بعد.',\n    type: 'استفسار',\n    category: 'عام',\n    priority: 'عادي',\n    summary: 'خطأ تقني',\n    data_complete: false\n  };\n}\n\n// Ensure all required fields exist\nconst result = {\n  phoneNumber,\n  sessionData,\n  aiResponse: {\n    reply: aiResponse.reply || '',\n    type: aiResponse.type || 'استفسار',\n    category: aiResponse.category || 'عام',\n    priority: aiResponse.priority || 'عادي',\n    summary: aiResponse.summary || '',\n    data_complete: aiResponse.data_complete || false\n  },\n  reply: aiResponse.reply || '',\n  reply_text: aiResponse.reply || '',\n  type: aiResponse.type || 'استفسار',\n  category: aiResponse.category || 'عام',\n  priority: aiResponse.priority || 'عادي',\n  summary: aiResponse.summary || '',\n  data_complete: aiResponse.data_complete || false\n};\n\nreturn [{ json: result }];"
+      },
+      "id": "parse-response",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "respond-ai",
+      "name": "Return AI Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1100, 300]
+    }
+  ],
+  "connections": {
+    "AI Processor Webhook": {
+      "main": [[{ "node": "Build AI Prompt", "type": "main", "index": 0 }]]
+    },
+    "Build AI Prompt": {
+      "main": [[{ "node": "Call OpenRouter (Claude)", "type": "main", "index": 0 }]]
+    },
+    "Call OpenRouter (Claude)": {
+      "main": [[{ "node": "Parse AI Response", "type": "main", "index": 0 }]]
+    },
+    "Parse AI Response": {
+      "main": [[{ "node": "Return AI Response", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    { "name": "Med Africa", "id": "1" },
+    { "name": "AI", "id": "4" }
+  ],
+  "pinData": {},
+  "versionId": "1"
+}

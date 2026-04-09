@@ -1,0 +1,72 @@
+version: '3.8'
+
+# ============================================
+# Med Africa - n8n Self-Hosting with Docker
+# ============================================
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: medafrica-n8n
+    restart: unless-stopped
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE:-true}
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:-changeme}
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
+      - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678}
+      - N8N_WEBHOOK_BASE_URL=${N8N_WEBHOOK_BASE_URL:-http://localhost:5678}
+      - GENERIC_TIMEZONE=Africa/Casablanca
+      - TZ=Africa/Casablanca
+      # Database
+      - DB_TYPE=${DB_TYPE:-postgresdb}
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${DB_POSTGRESDB_DATABASE:-n8n}
+      - DB_POSTGRESDB_USER=${DB_POSTGRESDB_USER:-n8n}
+      - DB_POSTGRESDB_PASSWORD=${DB_POSTGRESDB_PASSWORD:-changeme_db}
+      # API Keys (available as env vars in workflows)
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - GOOGLE_SHEETS_ID=${GOOGLE_SHEETS_ID}
+      - DIALOG360_API_KEY=${DIALOG360_API_KEY}
+      - MANAGER_WHATSAPP_NUMBER=${MANAGER_WHATSAPP_NUMBER}
+      - MANAGER_EMAIL=${MANAGER_EMAIL}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - medafrica
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: medafrica-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${DB_POSTGRESDB_DATABASE:-n8n}
+      - POSTGRES_USER=${DB_POSTGRESDB_USER:-n8n}
+      - POSTGRES_PASSWORD=${DB_POSTGRESDB_PASSWORD:-changeme_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_POSTGRESDB_USER:-n8n}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - medafrica
+
+volumes:
+  n8n_data:
+    driver: local
+  postgres_data:
+    driver: local
+
+networks:
+  medafrica:
+    driver: bridge

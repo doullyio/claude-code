@@ -1,0 +1,253 @@
+{
+  "name": "Save & Notify - Med Africa",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "save-and-notify",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "save-webhook",
+      "name": "Save Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 400],
+      "webhookId": "save-and-notify"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate ticket ID: MA-YYYY-NNNNN\nconst input = $input.first().json;\nconst staticData = $getWorkflowStaticData('global');\n\n// Initialize ticket counter\nif (!staticData.ticketCounter) {\n  staticData.ticketCounter = 0;\n}\nstaticData.ticketCounter++;\n\nconst now = new Date();\nconst year = now.getFullYear();\nconst seq = String(staticData.ticketCounter).padStart(5, '0');\nconst ticketId = `MA-${year}-${seq}`;\n\nconst sessionData = input.sessionData || {};\n\n// Prepare row data for Google Sheets\nconst rowData = {\n  ticketId: ticketId,\n  date: now.toLocaleDateString('ar-MA', { year: 'numeric', month: '2-digit', day: '2-digit' }),\n  time: now.toLocaleTimeString('ar-MA', { hour: '2-digit', minute: '2-digit', hour12: false }),\n  firstName: sessionData.firstName || '',\n  lastName: sessionData.lastName || '',\n  city: sessionData.city || '',\n  phoneNumber: input.phoneNumber || '',\n  trackingNumber: sessionData.trackingNumber || '',\n  type: input.type || 'استفسار',\n  category: input.category || 'عام',\n  priority: input.priority || 'عادي',\n  status: 'جديد',\n  description: input.summary || sessionData.description || '',\n  assignee: '',\n  notes: ''\n};\n\nreturn [{\n  json: {\n    ...rowData,\n    originalReply: input.replyText || '',\n    priority: input.priority || 'عادي'\n  }\n}];"
+      },
+      "id": "generate-ticket",
+      "name": "Generate Ticket ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 400]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "الشكاوي"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "رقم التذكرة": "={{ $json.ticketId }}",
+            "التاريخ": "={{ $json.date }}",
+            "الوقت": "={{ $json.time }}",
+            "الاسم": "={{ $json.firstName }}",
+            "اللقب": "={{ $json.lastName }}",
+            "المدينة": "={{ $json.city }}",
+            "رقم الهاتف": "={{ $json.phoneNumber }}",
+            "رقم التتبع": "={{ $json.trackingNumber }}",
+            "النوع": "={{ $json.type }}",
+            "الفئة": "={{ $json.category }}",
+            "الأولوية": "={{ $json.priority }}",
+            "الحالة": "={{ $json.status }}",
+            "الوصف": "={{ $json.description }}",
+            "المسؤول": "={{ $json.assignee }}",
+            "ملاحظات": "={{ $json.notes }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "append-sheets",
+      "name": "Save to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [660, 400],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-cred",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "outputKey": "urgent",
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.priority }}",
+                    "rightValue": "عاجل",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "important",
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.priority }}",
+                    "rightValue": "مهم",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "normal",
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.priority }}",
+                    "rightValue": "عادي",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ],
+          "fallbackOutput": "normal"
+        },
+        "options": {}
+      },
+      "id": "priority-router",
+      "name": "Priority Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [880, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://waba.360dialog.io/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "D360-API-KEY",
+              "value": "={{ $env.DIALOG360_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $env.MANAGER_WHATSAPP_NUMBER }}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"🚨 تنبيه عاجل - Med Africa\\n\\nتذكرة: {{ $json.ticketId }}\\nالعميل: {{ $json.firstName }} {{ $json.lastName }}\\nالمدينة: {{ $json.city }}\\nالفئة: {{ $json.category }}\\nرقم التتبع: {{ $json.trackingNumber }}\\nالوصف: {{ $json.description }}\\n\\nالأولوية: عاجل ⚠️\"\n  }\n}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "notify-manager-whatsapp",
+      "name": "WhatsApp Alert to Manager",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 250]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $env.MANAGER_EMAIL || 'manager@medafrica.ma' }}",
+        "subject": "=⚠️ شكوى مهمة - {{ $json.ticketId }} - {{ $json.category }}",
+        "emailType": "text",
+        "message": "=تفاصيل الشكوى المهمة:\n\nرقم التذكرة: {{ $json.ticketId }}\nالتاريخ: {{ $json.date }} {{ $json.time }}\n\nبيانات العميل:\n- الاسم: {{ $json.firstName }} {{ $json.lastName }}\n- المدينة: {{ $json.city }}\n- رقم الهاتف: {{ $json.phoneNumber }}\n- رقم التتبع: {{ $json.trackingNumber }}\n\nتفاصيل الشكوى:\n- النوع: {{ $json.type }}\n- الفئة: {{ $json.category }}\n- الأولوية: مهم\n- الوصف: {{ $json.description }}\n\nيرجى المتابعة في أقرب وقت.",
+        "options": {}
+      },
+      "id": "notify-manager-email",
+      "name": "Email Alert to Manager",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1120, 400],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-cred",
+          "name": "Gmail OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normal priority - no extra notification needed\nreturn [$input.first()];"
+      },
+      "id": "normal-pass",
+      "name": "Normal - No Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 550]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare confirmation message for customer\nconst input = $input.first().json;\nconst ticketId = input.ticketId;\nconst originalReply = input.originalReply || '';\n\nconst confirmationMsg = `${originalReply}\\n\\n✅ تم تسجيل طلبك بنجاح!\\nرقم التذكرة ديالك: ${ticketId}\\n\\nغادي نتواصلو معاك في أقرب وقت إن شاء الله.\\nشكراً على ثقتك في Med Africa! 🌍`;\n\nreturn [{\n  json: {\n    phoneNumber: input.phoneNumber,\n    replyText: confirmationMsg,\n    ticketId: ticketId,\n    status: 'saved'\n  }\n}];"
+      },
+      "id": "build-confirmation",
+      "name": "Build Confirmation Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "respond-save",
+      "name": "Return Result",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1560, 400]
+    }
+  ],
+  "connections": {
+    "Save Webhook": {
+      "main": [[{ "node": "Generate Ticket ID", "type": "main", "index": 0 }]]
+    },
+    "Generate Ticket ID": {
+      "main": [[{ "node": "Save to Google Sheets", "type": "main", "index": 0 }]]
+    },
+    "Save to Google Sheets": {
+      "main": [[{ "node": "Priority Router", "type": "main", "index": 0 }]]
+    },
+    "Priority Router": {
+      "main": [
+        [{ "node": "WhatsApp Alert to Manager", "type": "main", "index": 0 }],
+        [{ "node": "Email Alert to Manager", "type": "main", "index": 0 }],
+        [{ "node": "Normal - No Alert", "type": "main", "index": 0 }]
+      ]
+    },
+    "WhatsApp Alert to Manager": {
+      "main": [[{ "node": "Build Confirmation Message", "type": "main", "index": 0 }]]
+    },
+    "Email Alert to Manager": {
+      "main": [[{ "node": "Build Confirmation Message", "type": "main", "index": 0 }]]
+    },
+    "Normal - No Alert": {
+      "main": [[{ "node": "Build Confirmation Message", "type": "main", "index": 0 }]]
+    },
+    "Build Confirmation Message": {
+      "main": [[{ "node": "Return Result", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    { "name": "Med Africa", "id": "1" },
+    { "name": "Notifications", "id": "5" }
+  ],
+  "pinData": {},
+  "versionId": "1"
+}

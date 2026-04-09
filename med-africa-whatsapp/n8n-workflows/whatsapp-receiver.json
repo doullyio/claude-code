@@ -1,0 +1,189 @@
+{
+  "name": "WhatsApp Receiver - Med Africa",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "WhatsApp Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "webhookId": "whatsapp-med-africa"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract message data from 360dialog or Twilio format\nconst body = $input.first().json.body || $input.first().json;\n\nlet phoneNumber, messageBody, messageTimestamp, messageId;\n\n// 360dialog format\nif (body.messages && body.messages.length > 0) {\n  const msg = body.messages[0];\n  phoneNumber = msg.from;\n  messageBody = msg.text?.body || msg.body || '';\n  messageTimestamp = msg.timestamp;\n  messageId = msg.id;\n}\n// Twilio format\nelse if (body.From || body.WaId) {\n  phoneNumber = (body.From || '').replace('whatsapp:', '').replace('+', '');\n  messageBody = body.Body || '';\n  messageTimestamp = Math.floor(Date.now() / 1000).toString();\n  messageId = body.MessageSid || '';\n}\n// Direct/test format\nelse if (body.phone && body.message) {\n  phoneNumber = body.phone.replace('+', '');\n  messageBody = body.message;\n  messageTimestamp = Math.floor(Date.now() / 1000).toString();\n  messageId = 'test-' + Date.now();\n}\nelse {\n  throw new Error('Unknown webhook format');\n}\n\n// Normalize Moroccan phone numbers\nif (phoneNumber.startsWith('212')) {\n  // already correct\n} else if (phoneNumber.startsWith('0')) {\n  phoneNumber = '212' + phoneNumber.substring(1);\n}\n\nreturn [{\n  json: {\n    phoneNumber,\n    messageBody,\n    messageTimestamp,\n    messageId,\n    receivedAt: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "extract-message",
+      "name": "Extract Message Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check if phone number has an active session\n// Using n8n static data as key-value store\nconst phone = $input.first().json.phoneNumber;\nconst staticData = $getWorkflowStaticData('global');\n\n// Initialize sessions store if not exists\nif (!staticData.sessions) {\n  staticData.sessions = {};\n}\n\nconst session = staticData.sessions[phone];\nconst now = Date.now();\nconst SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes\n\nlet isActiveSession = false;\nlet currentState = 'new';\nlet conversationHistory = [];\nlet sessionData = {};\n\nif (session && (now - session.lastActivity) < SESSION_TIMEOUT) {\n  // Active session found\n  isActiveSession = true;\n  currentState = session.state;\n  conversationHistory = session.history || [];\n  sessionData = session.data || {};\n  \n  // Update last activity\n  staticData.sessions[phone].lastActivity = now;\n} else {\n  // New session or expired\n  staticData.sessions[phone] = {\n    state: 'new',\n    lastActivity: now,\n    startedAt: now,\n    history: [],\n    data: {}\n  };\n}\n\n// Add current message to history\nconversationHistory.push({\n  role: 'user',\n  content: $input.first().json.messageBody,\n  timestamp: $input.first().json.messageTimestamp\n});\n\nstaticData.sessions[phone].history = conversationHistory;\n\nreturn [{\n  json: {\n    ...$input.first().json,\n    isActiveSession,\n    currentState,\n    conversationHistory,\n    sessionData\n  }\n}];"
+      },
+      "id": "check-session",
+      "name": "Check Active Session",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.N8N_WEBHOOK_BASE_URL || 'http://localhost:5678' }}/webhook/conversation-manager",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($input.first().json) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "call-conversation-manager",
+      "name": "Route to Conversation Manager",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Send reply back via 360dialog WhatsApp API\nconst response = $input.first().json;\nconst phone = response.phoneNumber;\nconst replyText = response.replyText;\n\nreturn [{\n  json: {\n    phone,\n    replyText,\n    status: 'processed'\n  }\n}];"
+      },
+      "id": "prepare-reply",
+      "name": "Prepare Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://waba.360dialog.io/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "D360-API-KEY",
+              "value": "={{ $env.DIALOG360_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $input.first().json.phone }}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"{{ $input.first().json.replyText }}\"\n  }\n}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "send-whatsapp-reply",
+      "name": "Send WhatsApp Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'ok', messageId: $input.first().json.messageId || '' }) }}",
+        "options": {}
+      },
+      "id": "respond-webhook",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1540, 300]
+    }
+  ],
+  "connections": {
+    "WhatsApp Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Message Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message Data": {
+      "main": [
+        [
+          {
+            "node": "Check Active Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Active Session": {
+      "main": [
+        [
+          {
+            "node": "Route to Conversation Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route to Conversation Manager": {
+      "main": [
+        [
+          {
+            "node": "Prepare Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Reply": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Reply": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Med Africa",
+      "id": "1"
+    },
+    {
+      "name": "WhatsApp",
+      "id": "2"
+    }
+  ],
+  "pinData": {},
+  "versionId": "1"
+}

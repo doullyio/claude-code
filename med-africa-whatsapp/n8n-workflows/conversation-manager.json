@@ -1,0 +1,354 @@
+{
+  "name": "Conversation Manager - Med Africa",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "conversation-manager",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "cm-webhook",
+      "name": "Conversation Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 400],
+      "webhookId": "conversation-manager"
+    },
+    {
+      "parameters": {
+        "jsCode": "// State machine controller\nconst input = $input.first().json;\nconst phone = input.phoneNumber;\nconst message = input.messageBody;\nconst staticData = $getWorkflowStaticData('global');\n\nif (!staticData.sessions) staticData.sessions = {};\nif (!staticData.sessions[phone]) {\n  staticData.sessions[phone] = {\n    state: 'new',\n    data: {},\n    history: [],\n    lastActivity: Date.now()\n  };\n}\n\nconst session = staticData.sessions[phone];\nconst currentState = input.currentState || session.state || 'new';\n\nreturn [{\n  json: {\n    ...input,\n    currentState,\n    sessionData: session.data || {},\n    conversationHistory: input.conversationHistory || session.history || []\n  }\n}];"
+      },
+      "id": "load-state",
+      "name": "Load Session State",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 400]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "outputKey": "new",
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.currentState }}",
+                    "rightValue": "new",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "waiting_name",
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.currentState }}",
+                    "rightValue": "waiting_name",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "waiting_lastname",
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.currentState }}",
+                    "rightValue": "waiting_lastname",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "waiting_city",
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.currentState }}",
+                    "rightValue": "waiting_city",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "waiting_tracking",
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.currentState }}",
+                    "rightValue": "waiting_tracking",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "classifying",
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.currentState }}",
+                    "rightValue": "classifying",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "complaint_or_inquiry",
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.currentState }}",
+                    "rightValue": "complaint_flow|inquiry_flow",
+                    "operator": { "type": "string", "operation": "regex" }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "completed",
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.currentState }}",
+                    "rightValue": "completed",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ],
+          "fallbackOutput": "classifying"
+        },
+        "options": {}
+      },
+      "id": "state-router",
+      "name": "State Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [660, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// State: NEW - Send greeting and ask for name\nconst input = $input.first().json;\nconst phone = input.phoneNumber;\nconst staticData = $getWorkflowStaticData('global');\n\nconst replyText = 'أهلاً وسهلاً بيك في Med Africa! 🌍\\nأنا هنا باش نعاونك.\\nعافاك، شنو سميتك الكاملة؟';\n\n// Update state\nif (!staticData.sessions) staticData.sessions = {};\nif (!staticData.sessions[phone]) staticData.sessions[phone] = { data: {}, history: [] };\nstaticData.sessions[phone].state = 'waiting_name';\nstaticData.sessions[phone].lastActivity = Date.now();\nstaticData.sessions[phone].history = [\n  ...(staticData.sessions[phone].history || []),\n  { role: 'assistant', content: replyText, timestamp: Math.floor(Date.now()/1000).toString() }\n];\n\nreturn [{ json: { ...input, replyText, nextState: 'waiting_name' } }];"
+      },
+      "id": "state-new",
+      "name": "State: New → Greeting",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 100]
+    },
+    {
+      "parameters": {
+        "jsCode": "// State: WAITING_NAME - Save name, ask for lastname\nconst input = $input.first().json;\nconst phone = input.phoneNumber;\nconst name = input.messageBody.trim();\nconst staticData = $getWorkflowStaticData('global');\n\n// Save name\nstaticData.sessions[phone].data.firstName = name;\nstaticData.sessions[phone].state = 'waiting_lastname';\nstaticData.sessions[phone].lastActivity = Date.now();\n\nconst replyText = `شكرا ${name}! 👍\\nعافاك، شنو النسب ديالك (اللقب العائلي)؟`;\n\nstaticData.sessions[phone].history.push(\n  { role: 'assistant', content: replyText, timestamp: Math.floor(Date.now()/1000).toString() }\n);\n\nreturn [{ json: { ...input, replyText, nextState: 'waiting_lastname' } }];"
+      },
+      "id": "state-waiting-name",
+      "name": "State: Save Name",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 250]
+    },
+    {
+      "parameters": {
+        "jsCode": "// State: WAITING_LASTNAME - Save lastname, ask for city\nconst input = $input.first().json;\nconst phone = input.phoneNumber;\nconst lastname = input.messageBody.trim();\nconst staticData = $getWorkflowStaticData('global');\n\n// Save lastname\nstaticData.sessions[phone].data.lastName = lastname;\nstaticData.sessions[phone].state = 'waiting_city';\nstaticData.sessions[phone].lastActivity = Date.now();\n\nconst replyText = 'مزيان! 🏙️\\nمن أي مدينة نتا/نتي؟';\n\nstaticData.sessions[phone].history.push(\n  { role: 'assistant', content: replyText, timestamp: Math.floor(Date.now()/1000).toString() }\n);\n\nreturn [{ json: { ...input, replyText, nextState: 'waiting_city' } }];"
+      },
+      "id": "state-waiting-lastname",
+      "name": "State: Save Lastname",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// State: WAITING_CITY - Save city, ask for tracking number\nconst input = $input.first().json;\nconst phone = input.phoneNumber;\nconst city = input.messageBody.trim();\nconst staticData = $getWorkflowStaticData('global');\n\n// Save city\nstaticData.sessions[phone].data.city = city;\nstaticData.sessions[phone].state = 'waiting_tracking';\nstaticData.sessions[phone].lastActivity = Date.now();\n\nconst replyText = 'تمام! 📦\\nعافاك عطيني رقم التتبع ديالك (numéro de suivi):';\n\nstaticData.sessions[phone].history.push(\n  { role: 'assistant', content: replyText, timestamp: Math.floor(Date.now()/1000).toString() }\n);\n\nreturn [{ json: { ...input, replyText, nextState: 'waiting_tracking' } }];"
+      },
+      "id": "state-waiting-city",
+      "name": "State: Save City",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 550]
+    },
+    {
+      "parameters": {
+        "jsCode": "// State: WAITING_TRACKING - Save tracking, ask for issue\nconst input = $input.first().json;\nconst phone = input.phoneNumber;\nconst tracking = input.messageBody.trim();\nconst staticData = $getWorkflowStaticData('global');\n\n// Save tracking number\nstaticData.sessions[phone].data.trackingNumber = tracking;\nstaticData.sessions[phone].state = 'classifying';\nstaticData.sessions[phone].lastActivity = Date.now();\n\nconst replyText = 'شكرا! 🙏\\nدابا عافاك قولي: شنو المشكل أو الاستفسار ديالك؟';\n\nstaticData.sessions[phone].history.push(\n  { role: 'assistant', content: replyText, timestamp: Math.floor(Date.now()/1000).toString() }\n);\n\nreturn [{ json: { ...input, replyText, nextState: 'classifying' } }];"
+      },
+      "id": "state-waiting-tracking",
+      "name": "State: Save Tracking",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 700]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.N8N_WEBHOOK_BASE_URL || 'http://localhost:5678' }}/webhook/claude-ai-processor",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ phoneNumber: $json.phoneNumber, messageBody: $json.messageBody, conversationHistory: $json.conversationHistory, sessionData: $getWorkflowStaticData('global').sessions[$json.phoneNumber].data, currentState: $json.currentState }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "call-ai-classify",
+      "name": "Call Claude AI Classifier",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 850]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process AI classification response\nconst input = $input.first().json;\nconst phone = input.phoneNumber || $('Load Session State').first().json.phoneNumber;\nconst staticData = $getWorkflowStaticData('global');\nconst aiResponse = input.aiResponse || input;\n\n// Parse AI response\nlet replyText = aiResponse.reply || aiResponse.reply_text || '';\nlet detectedType = aiResponse.type || 'استفسار';\nlet category = aiResponse.category || 'عام';\nlet priority = aiResponse.priority || 'عادي';\nlet summary = aiResponse.summary || '';\nlet dataComplete = aiResponse.data_complete || false;\n\nconst session = staticData.sessions[phone];\n\nif (dataComplete) {\n  // Move to completed state\n  session.state = 'completed';\n  session.data.type = detectedType;\n  session.data.category = category;\n  session.data.priority = priority;\n  session.data.summary = summary;\n  session.data.description = $('Load Session State').first().json.messageBody;\n} else if (detectedType === 'شكوى') {\n  session.state = 'complaint_flow';\n} else {\n  session.state = 'inquiry_flow';\n}\n\nsession.lastActivity = Date.now();\nsession.history.push(\n  { role: 'assistant', content: replyText, timestamp: Math.floor(Date.now()/1000).toString() }\n);\n\nreturn [{\n  json: {\n    phoneNumber: phone,\n    replyText,\n    detectedType,\n    category,\n    priority,\n    summary,\n    dataComplete,\n    nextState: session.state,\n    sessionData: session.data\n  }\n}];"
+      },
+      "id": "process-ai-response",
+      "name": "Process AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1140, 850]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.dataComplete }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "check-complete",
+      "name": "Is Data Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1360, 850]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.N8N_WEBHOOK_BASE_URL || 'http://localhost:5678' }}/webhook/save-and-notify",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ phoneNumber: $json.phoneNumber, sessionData: $json.sessionData, replyText: $json.replyText, type: $json.detectedType, category: $json.category, priority: $json.priority, summary: $json.summary }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "trigger-save",
+      "name": "Trigger Save & Notify",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1580, 750]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Handle complaint/inquiry sub-flow — continue conversation with AI\nconst input = $input.first().json;\nconst phone = input.phoneNumber;\nconst staticData = $getWorkflowStaticData('global');\nconst session = staticData.sessions[phone];\n\n// For sub-flows, we continue calling AI until data_complete = true\nreturn [{ json: { ...input } }];"
+      },
+      "id": "continue-flow",
+      "name": "Continue Sub-Flow",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1580, 950]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Clean up session after completion\nconst phone = $input.first().json.phoneNumber;\nconst staticData = $getWorkflowStaticData('global');\n\n// Mark session as completed but keep for reference\nif (staticData.sessions && staticData.sessions[phone]) {\n  staticData.sessions[phone].state = 'completed';\n  staticData.sessions[phone].completedAt = Date.now();\n}\n\nconst ticketId = $input.first().json.ticketId || 'N/A';\nconst replyText = $input.first().json.replyText;\n\nreturn [{ json: { phoneNumber: phone, replyText, ticketId } }];"
+      },
+      "id": "cleanup-session",
+      "name": "Cleanup Session",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1800, 750]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Session cleanup cron - remove expired sessions\n// This can be triggered periodically\nconst staticData = $getWorkflowStaticData('global');\nconst now = Date.now();\nconst SESSION_TIMEOUT = 30 * 60 * 1000;\n\nif (staticData.sessions) {\n  const phones = Object.keys(staticData.sessions);\n  let cleaned = 0;\n  for (const phone of phones) {\n    const session = staticData.sessions[phone];\n    if (session.state === 'completed' || (now - session.lastActivity) > SESSION_TIMEOUT) {\n      delete staticData.sessions[phone];\n      cleaned++;\n    }\n  }\n  return [{ json: { cleaned, remaining: Object.keys(staticData.sessions).length } }];\n}\n\nreturn [{ json: { cleaned: 0, remaining: 0 } }];"
+      },
+      "id": "session-cleanup",
+      "name": "Session Cleanup (Cron)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 700]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "minutes", "minutesInterval": 30 }]
+        }
+      },
+      "id": "cleanup-trigger",
+      "name": "Every 30 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 700]
+    }
+  ],
+  "connections": {
+    "Conversation Webhook": {
+      "main": [[{ "node": "Load Session State", "type": "main", "index": 0 }]]
+    },
+    "Load Session State": {
+      "main": [[{ "node": "State Router", "type": "main", "index": 0 }]]
+    },
+    "State Router": {
+      "main": [
+        [{ "node": "State: New → Greeting", "type": "main", "index": 0 }],
+        [{ "node": "State: Save Name", "type": "main", "index": 0 }],
+        [{ "node": "State: Save Lastname", "type": "main", "index": 0 }],
+        [{ "node": "State: Save City", "type": "main", "index": 0 }],
+        [{ "node": "State: Save Tracking", "type": "main", "index": 0 }],
+        [{ "node": "Call Claude AI Classifier", "type": "main", "index": 0 }],
+        [{ "node": "Call Claude AI Classifier", "type": "main", "index": 0 }],
+        [{ "node": "Cleanup Session", "type": "main", "index": 0 }]
+      ]
+    },
+    "Call Claude AI Classifier": {
+      "main": [[{ "node": "Process AI Response", "type": "main", "index": 0 }]]
+    },
+    "Process AI Response": {
+      "main": [[{ "node": "Is Data Complete?", "type": "main", "index": 0 }]]
+    },
+    "Is Data Complete?": {
+      "main": [
+        [{ "node": "Trigger Save & Notify", "type": "main", "index": 0 }],
+        [{ "node": "Continue Sub-Flow", "type": "main", "index": 0 }]
+      ]
+    },
+    "Trigger Save & Notify": {
+      "main": [[{ "node": "Cleanup Session", "type": "main", "index": 0 }]]
+    },
+    "Every 30 Minutes": {
+      "main": [[{ "node": "Session Cleanup (Cron)", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    { "name": "Med Africa", "id": "1" },
+    { "name": "Conversation", "id": "3" }
+  ],
+  "pinData": {},
+  "versionId": "1"
+}
