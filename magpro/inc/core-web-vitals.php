@@ -18,75 +18,30 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Add aspect-ratio CSS to prevent layout shift.
  */
 function magpro_aspect_ratio_css() {
-	?>
-	<style id="magpro-aspect-ratio">
-		/* Prevent CLS on images */
-		img {
-			aspect-ratio: attr(width) / attr(height);
-		}
-
-		/* Featured image aspect ratios */
-		.magpro-card-thumb {
-			aspect-ratio: 16 / 10;
-		}
-
-		.magpro-featured-image,
-		.magpro-hero-image {
-			aspect-ratio: 16 / 9;
-		}
-
-		.magpro-post-thumbnail {
-			aspect-ratio: 16 / 9;
-		}
-
-		.magpro-single-featured {
-			aspect-ratio: 16 / 9;
-		}
-
-		/* Ad units - Fixed sizes to prevent shift */
-		.magpro-ad-wrapper {
-			min-height: 250px;
-		}
-
-		.magpro-ad-wrapper.magpro-ad-header_banner {
-			min-height: 100px;
-		}
-
-		.magpro-ad-wrapper.magpro-ad-footer_sticky {
-			min-height: 60px;
-		}
-
-		/* Sidebar ads */
-		.magpro-ad-wrapper.magpro-ad-sidebar_top,
-		.magpro-ad-wrapper.magpro-ad-sidebar_middle,
-		.magpro-ad-wrapper.magpro-ad-sidebar_sticky {
-			min-height: 280px;
-		}
-
-		/* In-article ads */
-		.magpro-ad-wrapper.magpro-ad-mid_article {
-			min-height: 320px;
-		}
-
-		/* Prevent form layout shift */
-		input, textarea, select {
-			max-width: 100%;
-		}
-
-		/* Avatar fixed sizes */
-		.magpro-comment-avatar img,
-		.magpro-author-avatar img {
-			width: 60px;
-			height: 60px;
-		}
-
-		.magpro-popular-count {
-			width: 32px;
-			height: 32px;
-		}
-	</style>
-	<?php
+	echo '<style id="magpro-aspect-ratio">';
+	echo '/* Prevent CLS on images */';
+	echo 'img { aspect-ratio: attr(width) / attr(height); }';
+	echo '/* Featured image aspect ratios */';
+	echo '.magpro-card-thumb { aspect-ratio: 16 / 10; }';
+	echo '.magpro-featured-image, .magpro-hero-image { aspect-ratio: 16 / 9; }';
+	echo '.magpro-post-thumbnail { aspect-ratio: 16 / 9; }';
+	echo '.magpro-single-featured { aspect-ratio: 16 / 9; }';
+	echo '/* Ad units - Fixed sizes to prevent shift */';
+	echo '.magpro-ad-wrapper { min-height: 250px; }';
+	echo '.magpro-ad-wrapper.magpro-ad-header_banner { min-height: 100px; }';
+	echo '.magpro-ad-wrapper.magpro-ad-footer_sticky { min-height: 60px; }';
+	echo '/* Sidebar ads */';
+	echo '.magpro-ad-wrapper.magpro-ad-sidebar_top, .magpro-ad-wrapper.magpro-ad-sidebar_middle, .magpro-ad-wrapper.magpro-ad-sidebar_sticky { min-height: 280px; }';
+	echo '/* In-article ads */';
+	echo '.magpro-ad-wrapper.magpro-ad-mid_article { min-height: 320px; }';
+	echo '/* Prevent form layout shift */';
+	echo 'input, textarea, select { max-width: 100%; }';
+	echo '/* Avatar fixed sizes */';
+	echo '.magpro-comment-avatar img, .magpro-author-avatar img { width: 60px; height: 60px; }';
+	echo '.magpro-popular-count { width: 32px; height: 32px; }';
+	echo '</style>';
 }
+
 add_action( 'wp_head', 'magpro_aspect_ratio_css', 0 );
 
 /**
@@ -249,27 +204,14 @@ function magpro_optimize_fcp() {
  * Stabilize layout with container queries where possible.
  */
 function magpro_add_container_css() {
-	?>
-	<style id="magpro-container-queries">
-		/* Use CSS containment for performance */
-		.magpro-post-card {
-			contain: layout style paint;
-		}
-
-		.magpro-widget {
-			contain: layout style paint;
-		}
-
-		.magpro-ad-wrapper {
-			contain: layout style;
-		}
-
-		/* Prevent paint thrashing */
-		.magpro-comment {
-			contain: content;
-		}
-	</style>
-	<?php
+	echo '<style id="magpro-container-queries">';
+	echo '/* Use CSS containment for performance */';
+	echo '.magpro-post-card { contain: layout style paint; }';
+	echo '.magpro-widget { contain: layout style paint; }';
+	echo '.magpro-ad-wrapper { contain: layout style; }';
+	echo '/* Prevent paint thrashing */';
+	echo '.magpro-comment { contain: content; }';
+	echo '</style>';
 }
 add_action( 'wp_head', 'magpro_add_container_css' );
 
